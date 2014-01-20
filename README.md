@@ -24,7 +24,7 @@ exports.up = (db) ->*
     createdAt: { type: 'timestamp', defaultValue: 'NOW()' }
     deletedAt: { type: 'timestamp' }
 
-  db.createTable 'product_inventories',
+  yield db.createTable 'product_inventories',
     productId: { type: 'int', primaryKey: true }
 
 
