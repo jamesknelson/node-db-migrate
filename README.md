@@ -6,6 +6,32 @@ Database migration framework for node.js *with generators*
 
 Tests are still TODO.
 
+## Pretty example with coffeescript:
+
+exports.up = (db) ->*
+
+  # Product Tables
+
+  yield db.createTable 'products',
+    id: { type: 'int', primaryKey: true, autoIncrement: true }
+    storeId: { type: 'int', notNull: true }
+    name: { type: 'string', notNull: true, unique: true }
+    weight: { type: 'int' }
+    price: { type: 'int', notNull: true }
+    currency: { type: 'string', length: 3, notNull: true }
+    availableAt: { type: 'datetime' }
+    createdAt: { type: 'timestamp', defaultValue: 'NOW()' }
+    deletedAt: { type: 'timestamp' }
+
+  db.createTable 'product_inventories',
+    productId: { type: 'int', primaryKey: true }
+
+
+exports.down = (db) ->*
+
+  yield db.dropTable 'products'
+  yield db.dropTable 'product_inventories'
+
 ## Installation
 
     $ npm install db-migrate
