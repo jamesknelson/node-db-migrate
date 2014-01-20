@@ -8,7 +8,7 @@ Tests are still TODO.
 
 ## Pretty example with coffeescript:
 
-```
+```coffeescript
 exports.up = (db) ->*
 
   # Product Tables
