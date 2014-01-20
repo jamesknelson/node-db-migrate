@@ -10,6 +10,8 @@ var config = require('../lib/config.js');
 var index = require('../index');
 var log = require('../lib/log');
 var pkginfo = require('pkginfo')(module, 'version');
+var co = require('co');
+var thunkify = require('thunkify');
 
 process.on('uncaughtException', function(err) {
   log.error(err.stack);
@@ -118,42 +120,30 @@ function executeCreate() {
   })
 }
 
-function executeUp() {
+var execute = function(direction, cb) {
+  return function(err, migrator) {
+    assert.ifError(err);
+    migrator.migrationsDir = path.resolve(argv['migrations-dir']);
+    migrator.driver.createMigrationsTable(function(err) {
+      assert.ifError(err);
+      migrator[direction](argv, function(){ cb(null, migrator); });
+    });
+  }
+}
+
+var executeUp = thunkify(function(cb) {
   if(!argv.count) {
     argv.count = Number.MAX_VALUE;
   }
-  index.connect(config.getCurrent().settings, function(err, migrator) {
-    assert.ifError(err);
-    migrator.migrationsDir = path.resolve(argv['migrations-dir']);
-    migrator.driver.createMigrationsTable(function(err) {
-      assert.ifError(err);
-      log.verbose('migration table created');
-      migrator.up(argv, onComplete.bind(this, migrator));
-    });
-  });
-}
+  index.connect(config.getCurrent().settings, execute('up', cb));
+});
 
-function executeDown() {
+var executeDown = thunkify(function(cb) {
   if(!argv.destination && !argv.count) {
     argv.count = 1;
   }
-  index.connect(config.getCurrent().settings, function(err, migrator) {
-    assert.ifError(err);
-    migrator.migrationsDir = path.resolve(argv['migrations-dir']);
-    migrator.driver.createMigrationsTable(function(err) {
-      assert.ifError(err);
-      migrator.down(argv, onComplete.bind(this, migrator));
-    });
-  });
-}
-
-function onComplete(migrator, originalErr) {
-  migrator.driver.close(function(err) {
-    assert.ifError(originalErr);
-    assert.ifError(err);
-    log.info('Done');
-  });
-}
+  index.connect(config.getCurrent().settings, execute('down', cb));
+});
 
 function run() {
   var action = argv._.shift();
@@ -163,15 +153,25 @@ function run() {
       break;
     case 'up':
     case 'down':
+    case 'redo':
       loadConfig();
       if(argv._.length > 0) {
         argv.destination = argv._.shift().toString();
       }
-      if(action == 'up') {
-        executeUp();
-      } else {
-        executeDown();
-      }
+
+      co(function *(){
+        if(action == 'down' || action == 'redo') {
+          var migrator = yield executeDown();
+          yield migrator.driver.close();
+          log.info('Done');
+        }
+
+        if(action == 'up' || action == 'redo') {
+          var migrator = yield executeUp();
+          yield migrator.driver.close();
+          log.info('Done');
+        }
+      })();
       break;
 
     default:
