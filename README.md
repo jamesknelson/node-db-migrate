@@ -2,12 +2,13 @@
 
 Database migration framework for node.js *with generators*
 
-** Based on @kunklejr's node-db-migrate **
+**Based on @kunklejr's node-db-migrate**
 
 Tests are still TODO.
 
 ## Pretty example with coffeescript:
 
+```
 exports.up = (db) ->*
 
   # Product Tables
@@ -31,6 +32,7 @@ exports.down = (db) ->*
 
   yield db.dropTable 'products'
   yield db.dropTable 'product_inventories'
+```
 
 ## Installation
 
