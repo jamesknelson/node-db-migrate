@@ -1,6 +1,10 @@
-# db-migrate
+# node-db-migrate-generators
 
-Database migration framework for node.js
+Database migration framework for node.js *with generators*
+
+** Based on @kunklejr's node-db-migrate **
+
+Tests are still TODO.
 
 ## Installation
 
